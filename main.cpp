@@ -7,11 +7,15 @@ void Help(char * Cmd);
 
 ///////////////////////// STUBS ////////////////////
 
+void SetTransmitIDState(bool) {}
+
 void Write(char*Buf)
 {
 	std::cout << Buf << std::endl;
 }
 
+void OpenFile(const char *, const char*) {}
+void CloseFile(const char*) {}
 
 struct _Triggers
 {
@@ -70,7 +74,8 @@ public:
 	void DoClear(char *UserInput);
 	void DoSet(char *UserInput);
 	void DoSetChannel(char *UserInput, int CmdLen);
-	void DoTrigger(char *UserInput);
+	void DoSetTrigger(char *UserInput);
+	void DoSetLog(char *UserInput);
 };
 
 
@@ -102,8 +107,8 @@ void _MyApp::checkCmdHistory(char *UserInput, int size)
 	{
 		mCmdProc.process_Not_cmd(UserInput, UserInput, size);
 	}
-	mCmdProc.addCmdToHistory(UserInput, size);
-	printf(">"); fflush(stdout);
+	
+	//printf(">"); fflush(stdout);
 }
 
 
@@ -148,6 +153,9 @@ void _MyApp::processCmd(char *UserInput, int size)
 
 	checkCmdHistory(UserInput, size);
 	bufLen = strlen((char*)UserInput);
+
+	// If valid command
+	mCmdProc.addCmdToHistory(UserInput, size);
 
 	if (bufLen>0)
 	{
@@ -201,12 +209,93 @@ void _MyApp::DoSet(char *UserInput)
 		if ((strncmp(param1, "channel", 7)) == 0)
 			DoSetChannel(UserInput, i);
 		else if ((strncmp(param1, "trigger", 7)) == 0)
-			DoTrigger(UserInput);
+			DoSetTrigger(UserInput);
+		else if ((strncmp((char*)param1, "log", 7)) == 0)
+			DoSetLog(UserInput);
+			
+	}
+
+}
+void _MyApp::DoSetLog(char *UserInput)
+{
+	int i = strlen((char*)Cmd);
+	int index;
+	char param1[64];
+	char param2[64];
+	char param3[64];
+	char param4[64];
+
+	index = i + _MyAppDefs::SPACE;
+	mCmdProc.ExtractParamFromInput(1, (unsigned char*)&UserInput[index], ' ');
+	mCmdProc.GetParam(1, param1, sizeof(param1) - 1);
+
+	index = i + _MyAppDefs::SPACE + mCmdProc.ParamStrLen(1) + _MyAppDefs::SPACE;
+	mCmdProc.ExtractParamFromInput(2, (unsigned char*)&UserInput[index], ' ');
+	mCmdProc.GetParam(2, param2, sizeof(param2) - 1);
+
+    // Options for -toff -ton or -o could be in Param3 or Param4
+	index = i + _MyAppDefs::SPACE + mCmdProc.ParamStrLen(1) + _MyAppDefs::SPACE + mCmdProc.ParamStrLen(2) + _MyAppDefs::SPACE;
+	mCmdProc.ExtractParamFromInput(3, (unsigned char*)&UserInput[index], ' ');
+	mCmdProc.GetParam(3, param3, sizeof(param3) - 1);
+
+	// Options for -toff -ton or -o could be in Param3 or Param4
+	index = i + _MyAppDefs::SPACE + mCmdProc.ParamStrLen(1) + _MyAppDefs::SPACE + mCmdProc.ParamStrLen(2) + _MyAppDefs::SPACE + _MyAppDefs::SPACE + mCmdProc.ParamStrLen(3);
+	mCmdProc.ExtractParamFromInput(4, (unsigned char*)&UserInput[index], ' ');
+	mCmdProc.GetParam(4, param4, sizeof(param4) - 1);
+
+
+	// See if there are paramters to process, if not go back to START
+	if ((param1[0] == (unsigned char)0) ||
+		(param2[0] == (unsigned char)0))
+	{
+		std::cerr << "Missing parameters:" << std::endl;
+		Help((char*)Cmd);
+		return;
+	}
+	if (strcmp((const char*)param3, "-c") == 0)
+	{
+		CloseFile((const char *)param2);
+		return;
+	}
+
+	if ((strcmp((const char*)param3, "-o") == 0) ||
+		(strcmp((const char*)param4, "-o") == 0)) //Overwrite existing log
+	{
+		OpenFile((const char *)param2, "o");
+		//param1[0] = param2[0] = (unsigned char)0;
+		printf(">"); fflush(stdout);
+		// We do not call OpenFile() 'below' since the log file is presumed 
+		// to be opened when only two paramters are bing passed in.
+		if (param3[0] == 0) // If no -ton or -toff
+			return;
+	}
+	else OpenFile((const char *)param2, "w");
+
+	// A use could enter set log -ton OR set log -ton
+	// in which case only Param1 and Param2 will be populated
+	if ((strcmp((const char*)param3, "-ton") == 0) ||
+		(strcmp((const char*)param4, "-ton") == 0)) // Log Transmit ID on
+	{
+		SetTransmitIDState(true);
+		printf(">"); fflush(stdout);
+		return;
+	}
+	// Log Transmit ID off
+	if ((strcmp((const char*)param3, "-toff") == 0) ||
+		(strcmp((const char*)param4, "-toff") == 0)) // Log Transmit ID off
+	{
+		SetTransmitIDState(false);
+		printf(">"); fflush(stdout);
+		// We do not call OpenFile() 'way below' since the log file is presumed 
+		return;
+		// to be opened when only two paramters
+		// are bing passed in.
 	}
 }
 
 
-void _MyApp::DoTrigger(char *UserInput)
+
+void _MyApp::DoSetTrigger(char *UserInput)
 {
     char param2[64];
 	char param3[64];
