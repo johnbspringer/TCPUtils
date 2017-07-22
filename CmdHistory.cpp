@@ -24,6 +24,8 @@ void _CmdHistory::addCmdToHistory(const char *UserInput,int len)
 // size = size of buffer pointed to by cmdOut
 int _CmdHistory::process_Not_Not_cmd(const char *UserInput, char *cmdOut, int size)
 {
+	int HistRetrieveID;
+
 	if ((*(UserInput + 2)) != 0) // !! with an index
 	{
 		// See if what follows is a number
@@ -33,7 +35,8 @@ int _CmdHistory::process_Not_Not_cmd(const char *UserInput, char *cmdOut, int si
 			HistRetrieveID = atoi((const char *)(UserInput + 2));
 			strncpy((char *)cmdOut, CmdHist[HistRetrieveID], size - 1);
 			*(cmdOut + size) = 0; // null termainte
-			std::cout << cmdOut << std::endl;
+			std::cout << cmdOut;
+
 			HistRetrieveID = -1; // No history has been requested
 			return strlen(cmdOut);
 		}
@@ -56,26 +59,19 @@ int _CmdHistory::process_Not_Not_cmd(const char *UserInput, char *cmdOut, int si
 // size = size of buffer pointed to by cmdOut
 int _CmdHistory::process_Not_cmd(const char *UserInput, char *cmdOut, int size)
 {
-	if ((*(UserInput + 1)) != 0)
-	{
+	int HistRetrieveID;
+
 		// See if what follows is a number
 		if (isdigit(*(UserInput + 1)) != 0)
 		{
 			// get the command & wait for user to press enter
 			HistRetrieveID = atoi((const char *)(UserInput + 1));
-
 			strncpy((char *)cmdOut, CmdHist[HistRetrieveID], size - 1);
-			*(cmdOut + size) = 0; // null termainte
-			HistRetrieveID = -1; // No history has been requested
-			return strlen(cmdOut);
 		}
-		else std::cerr << "Argument to \'!\' must be an index value" << std::endl;
-	}
-	else // Execute last command
-	{
-		if (CmdHistIndex)
-			HistRetrieveID = CmdHistIndex;
-		return 0;
-	}
-	return -1;
+		else // Execute the previous command again
+			strncpy((char *)cmdOut, CmdHist[CmdHistIndex-1], size - 1);
+
+		*(cmdOut + size) = 0; // null termainte
+		return strlen(cmdOut);
+
 }

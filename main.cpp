@@ -89,25 +89,27 @@ void _MyApp::checkCmdHistory(char *UserInput, int size)
 	if (mCmdProc.GetCmdHistIndex() > mCmdProc.MAX_COMMANDS)
 		mCmdProc.SetCmdHistIndex(0);
 
-	//  Using !! without an index number shows history
-	if ((strcmp("history", (const char *)UserInput) == 0) ||
-		(strcmp("!!",      (const char *)UserInput) == 0))
+	
+	if (strcmp("history", (const char *)UserInput) == 0)
+		strcpy((char*)UserInput, "!!");
+
+	if ((strncmp("!!", (const char *)UserInput, 2) == 0))
 	{
-		if (mCmdProc.process_Not_Not_cmd(UserInput, UserInput, size) >= 0)
+		if (mCmdProc.process_Not_Not_cmd(UserInput, cmdOut, size) >= 0)
 		{
-			std::cout << cmdOut; // Send the daa to the user prompt
-			std::cin.getline(buf, 256);// Allow the user to edit or accept as is
-			strncat((char*)UserInput, (char *)buf, size - 1);
+//			std::cout << cmdOut; // Send the data to the user prompt
+//			std::cin.getline(buf, 256);// Allow the user to edit or accept as is
+//			strncat((char*)UserInput, (char *)buf, size - 1);
 			*(UserInput + strlen(UserInput)) = 0; // null terminate
 		}
-		else
+		else //  Using !! without an index number shows history
 			std::cerr << "Argument to \'!!\' must be an index value" << std::endl;
 	}
 	else if (strncmp("!", (const char *)UserInput, 1) == 0)
 	{
 		mCmdProc.process_Not_cmd(UserInput, UserInput, size);
 	}
-	
+	mCmdProc.addCmdToHistory(UserInput, size);
 	//printf(">"); fflush(stdout);
 }
 
@@ -154,9 +156,6 @@ void _MyApp::processCmd(char *UserInput, int size)
 	checkCmdHistory(UserInput, size);
 	bufLen = strlen((char*)UserInput);
 
-	// If valid command
-	mCmdProc.addCmdToHistory(UserInput, size);
-
 	if (bufLen>0)
 	{
 		mCmdProc.extractCmd(UserInput, bufLen, (char*)Cmd);
@@ -185,6 +184,7 @@ void _MyApp::processCmd(char *UserInput, int size)
 		else if (strncmp((char*)Cmd, "set", 3) == 0)
 			DoSet(UserInput);
 	}
+//	printf(">"); fflush(stdout);
 }
 
 
@@ -456,6 +456,7 @@ int main(int argc, char* argv[])
 		std::cin.getline(buf, 256);
 		cMyApp.processCmd(buf, 256);
 		std::cout << buf << std::endl;
+		printf(">"); fflush(stdout);
 	}
 
 	return 0;
@@ -599,7 +600,7 @@ void Help(char * Cmd)
 	}
 	else if (strcmp(Cmd, "history") == 0)
 	{
-		printf("\nUsage is: \'history\' or \'!![index]\' or \'!<index> \'\n");
+		printf("\nUsage is: \'history\' or \'!!\' or \'!<index> \'\n");
 		printf("Using \'history\' or \'!!\' shows the last 100\n");
 		printf("recognized commands issued at the command line.\n");
 		printf("Issuing the command \'!<index>\' where <index>\n");
@@ -607,8 +608,8 @@ void Help(char * Cmd)
 		printf("entry as shown to the left of a history list, will\n");
 		printf("reenter the indicated command and wait for the user\n\n");
 		printf("to make additions and press the enter key.\n");
-		printf("Issuing the command \'!!<index>\' will immediatly\n");
-		printf("execute the indicated command\n\n");
+		printf("Issuing the command \'!\' will immediatly\n");
+		printf("execute the previously executed command\n\n");
 	}
 	else if (strcmp(Cmd, "display") == 0)
 	{

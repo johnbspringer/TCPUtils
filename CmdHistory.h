@@ -15,7 +15,6 @@ class _CmdHistory : public _CmdHistoryDef
 {
 	// Command history.  100 commands 256 bytes max for each each
 	char CmdHist[MAX_COMMANDS][MAX_COMMAND_LEN];
-	int HistRetrieveID;
 	int CmdHistIndex;
 public:
 	inline int GetCmdHistIndex(void){ return CmdHistIndex; }
@@ -27,7 +26,6 @@ public:
 	// and is incremented once per command execution.
 	_CmdHistory(void)
 	{
-		HistRetrieveID = 0;
 		CmdHistIndex = 0;
 		for (int i = 0; i < MAX_COMMANDS; i++)
 			CmdHist[i][0] = (char)0;
